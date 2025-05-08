@@ -1,0 +1,11 @@
+# sentencepiece
+# torch
+numpy
+pandas
+seaborn
+# transformers
+pyfluidsynth
+pretty_midi
+# mido
+matplotlib
+# minio
