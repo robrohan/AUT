@@ -146,13 +146,13 @@ def encode_midi(midi_file: str,
             #             drum_instrument.notes.append(note)
             # instrument = drum_instrument
 
-        notes = np.zeros(window_size, dtype=np.int32, order='C')
+        notes = np.zeros(window_size, dtype=np.uint32, order='C')
         notes[0] = header
         # sorted_notes = sorted(instrument.notes, key=lambda note: note.start)
         sorted_notes = instrument.notes
 
         for i, note in enumerate(sorted_notes):
-            if i >= window_size:
+            if i >= (window_size-1):
                 break
             encoded_note = encode_note(note)
             notes[i+1] = encoded_note
@@ -222,8 +222,10 @@ def decode_midi(
         pitch, start, end, velocity = decode_note(encoded_note)
         note = pretty_midi.Note(
             pitch=pitch,
-            start=quantize_time(start),   # should be in seconds not ticks
-            end=quantize_time(end),       # should be in seconds not ticks
+            # start=quantize_time(start),   # should be in seconds not ticks
+            # end=quantize_time(end),       # should be in seconds not ticks
+            start=start,   # should be in seconds not ticks
+            end=end,       # should be in seconds not ticks
             velocity=velocity,
         )
         instrument.notes.append(note)
@@ -232,24 +234,9 @@ def decode_midi(
     return pm
 
 
-def encoded_notes_to_str(raw_notes: np.array) -> str:
-    midi_chars = []
-    for _, raw_note in enumerate(raw_notes):
-        try:
-            midi_char = int(raw_note.astype(np.uint32))
-            byte_array = midi_char.to_bytes(4, 'big')
-            unicode_character = byte_array.decode('utf-8')
-            midi_chars.append(unicode_character)
-        except Exception as e:
-            print(e)
-            # print(f"{midi_char:32b} - {byte_array}")
-
-    midi_string = "".join(midi_chars)
-    return midi_string
+def serialize_notes(raw_notes: np.array, filename: str):
+    raw_notes.astype('int32').tofile(filename)
 
 
-def str_to_encoded_notes(string: str) -> np.array:
-    from_file = []
-    for c in string:
-        from_file.append(int.from_bytes(bytes(c, "utf-8"), 'big'))
-    return np.array(from_file)
+def deserialize_notes(filename: str) -> np.array:
+    return np.fromfile(filename, dtype=np.int32)
