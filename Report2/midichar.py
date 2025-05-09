@@ -36,7 +36,6 @@ def decode_header(header: int) -> Tuple[int,int,int,int]:
     bpm = (header >> 8) & 255
     nominator = (header >> 4) & 15
     denominator = header & 15
-
     return (int(key), int(bpm), int(nominator), int(denominator))
 
 
@@ -114,7 +113,6 @@ def extract_midi_metadata(pm) -> Tuple[int,int,int,int]:
 
 def encode_midi(midi_file: str,
                 window_size=64,
-                # instrument_index=None
                 instrument_name: str = "Standard Kit") -> np.array:
     """
     Encode a midi file into a numpy array of integers using the
@@ -127,7 +125,7 @@ def encode_midi(midi_file: str,
 
         data = extract_midi_metadata(pm)
         header = encode_header(data[0], data[1], data[2], data[3])
-        print(data)
+        # print(data)
 
         instrument_index = None
         if instrument_name != "Standard Kit":
@@ -158,7 +156,7 @@ def encode_midi(midi_file: str,
             notes[i+1] = encoded_note
 
     except Exception as e:
-        print(f"could not load {midi_file} because {e}")
+        # print(f"could not load {midi_file} because {e}")
         return None
 
     return np.array(notes)
@@ -203,9 +201,9 @@ def decode_midi(
     #######################################################
     # Function to quantize a time value to the nearest grid line
     # 1/8 note grid
-    def quantize_time(time, grid_size=1/32):
-        grid_line = grid_size * round(time / grid_size)
-        return grid_line
+    # def quantize_time(time, grid_size=1/32):
+    #     grid_line = grid_size * round(time / grid_size)
+    #     return grid_line
     #######################################################
 
     # Calculate ticks per second
