@@ -136,13 +136,13 @@ def encode_midi(midi_file: str,
         else:
             # Collect all the drum tracks (sometimes they are on
             # different track, kick and snare vs cymbals for example)
-            # drum_instrument = pretty_midi.Instrument(program=0, is_drum=True)
+            drum_instrument = pretty_midi.Instrument(program=0, is_drum=True)
             for inst in pm.instruments:
                 if inst.is_drum:
-                    instrument = inst
-            #         for note in inst.notes:
-            #             drum_instrument.notes.append(note)
-            # instrument = drum_instrument
+                    #instrument = inst
+                    for note in inst.notes:
+                        drum_instrument.notes.append(note)
+            instrument = drum_instrument
 
         notes = np.zeros(window_size, dtype=np.uint32, order='C')
         notes[0] = header

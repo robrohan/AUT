@@ -1,4 +1,11 @@
-# LSTM Midi
+# Midi Generator
+
+```mermaid
+flowchart LR
+    midi["input midi"] --> encoder
+    encoder --> NN --> NN --> NN --> decoder -->
+    midi2["output midi"] --> VST --> wav["Audio File"]
+```
 
 https://arxiv.org/abs/1810.12247
 
