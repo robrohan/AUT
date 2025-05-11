@@ -2,6 +2,7 @@ import pretty_midi
 import numpy as np
 from typing import Any, Tuple
 
+COMMON_RESOLUTION=220
 
 def encode_header(key: int, bpm: int, nominator: int, denominator:int ) -> int:
     """
@@ -39,55 +40,41 @@ def decode_header(header: int) -> Tuple[int,int,int,int]:
     return (int(key), int(bpm), int(nominator), int(denominator))
 
 
-def encode_note(note: Any) -> int:
-    """
-    | VELOCITY  | STEP      |
-    | --------- | --------- |
-    | 0000 0000 | 0000 0000 |
-
-    | DURATION  | PITCH     |
-    | --------- | --------- |
-    | 0000 0000 | 0000 0000 |
-    """
+def encode_note(note: Any, ticks_per_beat: int) -> int:
     if note is None:
         0
-    start = note.start
-    end = note.end
-    step = start
+    # convert seconds into ticks so we can use a common tick
+    start = int(note.start * ticks_per_beat)
+    end = int(note.end * ticks_per_beat)
     velocity = note.velocity
     pitch = note.pitch
-    duration = end
 
-    int_velocity = int(velocity)
-    int_step = int(255 * (step/100))
-    int_duration = int(255 * (duration/100))
+    int_velocity = int( ((velocity / 127) * 15) ) & 15
+    int_step = start & 65535
+    int_duration = (end - start) & 31
 
     encoded_note = 0
-    encoded_note += int_velocity << 24
     encoded_note += int_step << 16
-    encoded_note += int_duration << 8
+    encoded_note += int_duration << 11
+    encoded_note += int_velocity << 7
     encoded_note += pitch
 
+    # print(f"{encoded_note:32b}")
     return encoded_note
 
 
-def decode_note(encoded_note: int) -> Tuple:
-    """
-    | VELOCITY  | STEP      |
-    | --------- | --------- |
-    | 0000 0000 | 0000 0000 |
+def decode_note(encoded_note: int, ticks_per_beat: int) -> Tuple:
+    pitch = (encoded_note) & 127
+    velocity = (encoded_note >> 7) & 15
+    int_step = (encoded_note >> 16) & 65535
+    int_duration = (encoded_note >> 11) &31
 
-    | DURATION  | PITCH     |
-    | --------- | --------- |
-    | 0000 0000 | 0000 0000 |
-    """
-    pitch = (encoded_note) & 255
-    velocity = (encoded_note >> 24) & 255
-    int_step = (encoded_note >> 16) & 255
-    int_duration = (encoded_note >> 8) & 255
     # print(f"{encoded_note:32b}")
-    f_step = 100*(int_step/255)
-    f_duration = 100*(int_duration/255)
+    f_step = int_step / ticks_per_beat
+    f_duration = int_duration / ticks_per_beat
+    f_duration = f_step+f_duration
+    velocity = int((velocity/15)*127)
+
     return (pitch&127, f_step, f_duration, velocity&127)
 
 
@@ -121,6 +108,7 @@ def encode_midi(midi_file: str,
     """
     try:
         pm = pretty_midi.PrettyMIDI(midi_file)
+        ticks_per_beat = pm.resolution
         instrument = None
 
         data = extract_midi_metadata(pm)
@@ -136,13 +124,13 @@ def encode_midi(midi_file: str,
         else:
             # Collect all the drum tracks (sometimes they are on
             # different track, kick and snare vs cymbals for example)
-            drum_instrument = pretty_midi.Instrument(program=0, is_drum=True)
+            # drum_instrument = pretty_midi.Instrument(program=0, is_drum=True)
             for inst in pm.instruments:
                 if inst.is_drum:
-                    #instrument = inst
-                    for note in inst.notes:
-                        drum_instrument.notes.append(note)
-            instrument = drum_instrument
+                    instrument = inst
+            #         for note in inst.notes:
+            #             drum_instrument.notes.append(note)
+            # instrument = drum_instrument
 
         notes = np.zeros(window_size, dtype=np.uint32, order='C')
         notes[0] = header
@@ -152,11 +140,11 @@ def encode_midi(midi_file: str,
         for i, note in enumerate(sorted_notes):
             if i >= (window_size-1):
                 break
-            encoded_note = encode_note(note)
+            encoded_note = encode_note(note, COMMON_RESOLUTION)
             notes[i+1] = encoded_note
 
     except Exception as e:
-        # print(f"could not load {midi_file} because {e}")
+        print(f"could not load {midi_file} because {e}")
         return None
 
     return np.array(notes)
@@ -192,36 +180,23 @@ def decode_midi(
     key_signature = pretty_midi.KeySignature(key_number=key, time=0)
     pm.key_signature_changes.append(key_signature)
 
-    tick = 60 / (bpm * pm.resolution)
+    # print(bpm, pm.resolution)
+    # 24, 48, 96, 120, 240, 384, 480, and 960 ticks per beat
+    # tick = 60 / (bpm * pm.resolution)
+    tick = 60 / (bpm * COMMON_RESOLUTION)
     pm._tick_scales.append((0, tick))
     pm._update_tick_to_time(0)
+    # ticks_per_beat = pm.resolution
 
     pm.instruments.append(instrument)
-
-    #######################################################
-    # Function to quantize a time value to the nearest grid line
-    # 1/8 note grid
-    # def quantize_time(time, grid_size=1/32):
-    #     grid_line = grid_size * round(time / grid_size)
-    #     return grid_line
-    #######################################################
-
-    # Calculate ticks per second
-    # ticks_per_second = (bpm * pm.resolution) / 60
-    # def ticks_to_seconds(ticks):
-    #     return ticks / ticks_per_second
-    # _, start, _, _ = decode_note(notes[1])
-    # offset = start
 
     for i, encoded_note in enumerate(notes):
         if i == 0:
             # Skip header
             continue
-        pitch, start, end, velocity = decode_note(encoded_note)
+        pitch, start, end, velocity = decode_note(encoded_note, COMMON_RESOLUTION)
         note = pretty_midi.Note(
             pitch=pitch,
-            # start=quantize_time(start),   # should be in seconds not ticks
-            # end=quantize_time(end),       # should be in seconds not ticks
             start=start,   # should be in seconds not ticks
             end=end,       # should be in seconds not ticks
             velocity=velocity,
