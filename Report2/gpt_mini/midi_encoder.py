@@ -2,7 +2,8 @@ import pretty_midi
 import numpy as np
 from typing import Any, Tuple
 
-COMMON_RESOLUTION=220
+# 24, 48, 96, 120, 240, 384, 480, and 960
+COMMON_RESOLUTION=240
 
 def encode_header(key: int, bpm: int, nominator: int, denominator:int ) -> int:
     """
