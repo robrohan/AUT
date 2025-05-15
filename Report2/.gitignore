@@ -1,2 +1,4 @@
 output/
 training_data.*
+drums
+checkpoints

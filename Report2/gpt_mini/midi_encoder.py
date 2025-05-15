@@ -166,9 +166,9 @@ def decode_midi(
     header = notes[0]
     data = decode_header(header)
     key = data[0]
-    bpm = data[1]
-    numerator = data[2]
-    denominator = data[3]
+    bpm = data[1] if data[1] > 0 else 120
+    numerator = data[2] if data[2] > 0 else 4
+    denominator = data[3] if data[3] > 0 else 4
 
     pm = pretty_midi.PrettyMIDI()
     instrument = pretty_midi.Instrument(
