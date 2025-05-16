@@ -5,6 +5,7 @@ import json
 from torch.utils.data import Dataset
 import gpt_mini.midi_encoder as me
 import numpy as np
+import pickle
 
 class CharDataset(Dataset):
     """
@@ -40,11 +41,14 @@ class MidiDataset(Dataset):
     """
     Break midi into tokens that we can encode and decode.
     """
-    def __init__(self, file_path, max_length=128):
+    def __init__(self, file_path, tokenizer_path: str, max_length=128):
         self.file_path = file_path
         self.data = self._load_data(file_path)
         # self.tokenizer = spm.SentencePieceProcessor()
         # self.tokenizer.load(tokenizer_path)
+        f = open(tokenizer_path, 'rb')
+        self.tokenizer = pickle.load(f)
+        f.close()
         self.max_length = max_length
 
     def _load_data(self, file_path):
@@ -57,15 +61,21 @@ class MidiDataset(Dataset):
     def __getitem__(self, idx):
         text = self.data[idx].strip()
         # tokens = self.tokenizer.encode_as_ids(text)
-        tokens = np.array( json.loads(text), dtype=np.int32 )
+        out_file=f"drums/{idx}.mid"
+        # print(text)
+        # print("--------->", out_file)
+        # tokens = np.array( json.loads(text), dtype=np.int32 )
+        tokens = self.tokenizer.encode(out_file)
+        tokens = tokens[0].ids
+        # print("--------->", tokens)
 
         # Truncate if longer
         tokens = tokens[: self.max_length]
         if len(tokens) < self.max_length:
             # Pad if shorter
             tokens = tokens + [0] * (self.max_length - len(tokens))
-        # x = torch.tensor(tokens[:-1], dtype=torch.long)
-        # y = torch.tensor(tokens[1:], dtype=torch.long)
-        x = torch.tensor(tokens[:-1], dtype=torch.int32)
-        y = torch.tensor(tokens[1:], dtype=torch.int32)
+        x = torch.tensor(tokens[:-1], dtype=torch.long)
+        y = torch.tensor(tokens[1:], dtype=torch.long)
+        # x = torch.tensor(tokens[:-1], dtype=torch.int32)
+        # y = torch.tensor(tokens[1:], dtype=torch.int32)
         return x, y

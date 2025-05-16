@@ -94,8 +94,8 @@ class Trainer:
             x, y = batch
 
             # forward the model
-            print(x)
-            print(y)
+            # print(x)
+            # print(y)
             logits, self.loss = model(x, y)
 
             # backprop and update the parameters
@@ -109,8 +109,6 @@ class Trainer:
             tnow = time.time()
             self.iter_dt = tnow - self.iter_time
             self.iter_time = tnow
-
-            torch.save(model.state_dict(), "./models/theremin.pt")
 
             # termination conditions
             if config.max_iters is not None and self.iter_num >= config.max_iters:
