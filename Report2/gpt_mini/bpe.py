@@ -59,23 +59,15 @@ class MidiDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        text = self.data[idx].strip()
-        # tokens = self.tokenizer.encode_as_ids(text)
-        out_file=f"drums/{idx}.mid"
-        # print(text)
-        # print("--------->", out_file)
-        # tokens = np.array( json.loads(text), dtype=np.int32 )
-        tokens = self.tokenizer.encode(out_file)
+        file = self.data[idx].strip()
+        tokens = self.tokenizer.encode(file)
         tokens = tokens[0].ids
-        # print("--------->", tokens)
-
         # Truncate if longer
         tokens = tokens[: self.max_length]
         if len(tokens) < self.max_length:
             # Pad if shorter
             tokens = tokens + [0] * (self.max_length - len(tokens))
+
         x = torch.tensor(tokens[:-1], dtype=torch.long)
         y = torch.tensor(tokens[1:], dtype=torch.long)
-        # x = torch.tensor(tokens[:-1], dtype=torch.int32)
-        # y = torch.tensor(tokens[1:], dtype=torch.int32)
         return x, y
