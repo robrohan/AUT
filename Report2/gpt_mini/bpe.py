@@ -41,7 +41,7 @@ class MidiDataset(Dataset):
     """
     Break midi into tokens that we can encode and decode.
     """
-    def __init__(self, file_path, tokenizer_path: str, max_length=128):
+    def __init__(self, file_path, tokenizer_path: str, max_length=128, data_dir=""):
         self.file_path = file_path
         self.data = self._load_data(file_path)
         # self.tokenizer = spm.SentencePieceProcessor()
@@ -50,6 +50,7 @@ class MidiDataset(Dataset):
         self.tokenizer = pickle.load(f)
         f.close()
         self.max_length = max_length
+        self.data_dir = data_dir
 
     def _load_data(self, file_path):
         with open(file_path, "r", encoding="utf-8") as f:
@@ -60,7 +61,7 @@ class MidiDataset(Dataset):
 
     def __getitem__(self, idx):
         file = self.data[idx].strip()
-        tokens = self.tokenizer.encode(file)
+        tokens = self.tokenizer.encode(f"{self.data_dir}{file}")
         tokens = tokens[0].ids
         # Truncate if longer
         tokens = tokens[: self.max_length]
