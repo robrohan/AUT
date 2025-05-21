@@ -354,7 +354,6 @@ class GPT(nn.Module):
                 logits = logits[:, -1, :] / temperature
             except Exception as ex:
                 print(ex, logits)
-                raise ex
             # optionally crop the logits to only the top k options
             if top_k is not None:
                 v, _ = torch.topk(logits, top_k)
