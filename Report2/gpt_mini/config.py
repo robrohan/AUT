@@ -2,10 +2,10 @@ import torch
 
 DEFAULT_DEVICE = "cpu"
 
-if torch.cuda.is_available():
-    DEFAULT_DEVICE = "cuda"
-elif torch.backends.mps.is_available():
-    DEFAULT_DEVICE = "mps"
+# if torch.cuda.is_available():
+#     DEFAULT_DEVICE = "cuda"
+# elif torch.backends.mps.is_available():
+#     DEFAULT_DEVICE = "mps"
 
 
 CONFIG = {
@@ -15,7 +15,7 @@ CONFIG = {
         # currently just from the start of the file
         "window_size": 256,  # (48)
         "new_dataset_index": "training_data.txt",
-        "data_train": "data_train.txt",
+        "data_train": "data_train_sm.txt",
         "data_test": "data_test.txt",
         # Stop after processing this many items from
         # the original dataset
@@ -28,9 +28,9 @@ CONFIG = {
     "model": {
         # "model_type": "gpt-nano",
         # See model.py for suggestions
-        "n_layer": 6,
-        "n_head": 6,
-        "n_embed": 192,
+        "n_layer": 3,
+        "n_head": 3,
+        "n_embed": 48,
         ##
         "vocab_size": 50257,
         "block_size": 256,
@@ -41,7 +41,7 @@ CONFIG = {
     },
     "training": {
         "workers": 6,
-        "max_iters": 1000,
+        "max_iters": 3000,
         "batch_size": 32,
         "learning_rate": 0.03,
         # device set above
