@@ -28,9 +28,9 @@ CONFIG = {
     "model": {
         # "model_type": "gpt-nano",
         # See model.py for suggestions
-        "n_layer": 3,
-        "n_head": 3,
-        "n_embed": 48,
+        "n_layer": 4,
+        "n_head": 4,
+        "n_embed": 128,
         ##
         "vocab_size": 50257,
         "block_size": 256,
@@ -41,9 +41,9 @@ CONFIG = {
     },
     "training": {
         "workers": 6,
-        "max_iters": 3000,
-        "batch_size": 32,
-        "learning_rate": 0.03,
+        "max_iters": 20000,
+        "batch_size": 16,
+        "learning_rate": 0.003,
         # device set above
     }
 }
