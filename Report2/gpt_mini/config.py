@@ -2,10 +2,10 @@ import torch
 
 DEFAULT_DEVICE = "cpu"
 
-# if torch.cuda.is_available():
-#     DEFAULT_DEVICE = "cuda"
-# elif torch.backends.mps.is_available():
-#     DEFAULT_DEVICE = "mps"
+if torch.cuda.is_available():
+     DEFAULT_DEVICE = "cuda"
+elif torch.backends.mps.is_available():
+     DEFAULT_DEVICE = "mps"
 
 
 CONFIG = {
