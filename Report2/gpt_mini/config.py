@@ -15,8 +15,8 @@ CONFIG = {
         # currently just from the start of the file
         "window_size": 256,  # (48)
         "new_dataset_index": "training_data.txt",
-        "data_train": "data_train_sm.txt",
-        "data_test": "data_test.txt",
+        "data_train": "data_train.txt",
+        "data_validation": "data_validation.txt",
         # Stop after processing this many items from
         # the original dataset
         "max_dataset_items": 8000,
@@ -26,7 +26,6 @@ CONFIG = {
         "model": "./checkpoints/midi_tokenizer_bpe.pkl"
     },
     "model": {
-        # "model_type": "gpt-nano",
         # See model.py for suggestions
         "n_layer": 4,
         "n_head": 4,
@@ -41,10 +40,10 @@ CONFIG = {
     },
     "training": {
         "workers": 6,
-        "max_iters": 20000,
+        "max_iters": 400,
         "batch_size": 16,
         "learning_rate": 0.003,
-        # device set above
+        "validation_interval": 100,
     }
 }
 

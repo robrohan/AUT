@@ -99,6 +99,97 @@ def extract_midi_metadata(pm) -> Tuple[int,int,int,int]:
     return (int(key_signature), int(bpm), int(nominator), int(denominator))
 
 
+# def get_bpm(pm: pretty_midi.PrettyMIDI):
+#     bpm = 120
+#     try:
+#         # Get tempo changes
+#         tempo_changes = pm.get_tempo_changes()
+#         # Extract BPM
+#         if tempo_changes:
+#             # The first tempo change usually represents the initial BPM of the song
+#             bpm = tempo_changes[0][1]
+#     except Exception:
+#         # Probably no bpm defined in file
+#         pass
+#     return bpm
+
+
+def calculate_rhythmic_complexity(midi_file, bins=10):
+    """
+    Inter-Onset Intervals (IOIs)
+    IOIs are the time intervals between the start
+    of consecutive notes. They provide insight into the
+    rhythmic structure of the music.
+    """
+    pm = pretty_midi.PrettyMIDI(midi_file, resolution=COMMON_RESOLUTION)
+    bpm = 120
+    iois = []
+    durations = []
+
+    # Iterate over all instruments
+    for instrument in pm.instruments:
+        if instrument.is_drum:
+            # for this project, I am just playing with drums
+            # Sort notes by start time
+            sorted_notes = sorted(instrument.notes, key=lambda note: note.start)
+            # Calculate IOIs and collect durations
+            for i in range(1, len(sorted_notes)):
+                iois.append(sorted_notes[i].start - sorted_notes[i-1].start)
+                durations.append(sorted_notes[i].end - sorted_notes[i].start)
+
+    # Calculate mean and standard deviation of IOIs and durations
+    # Calculate the variability in note durations. Higher variability often
+    # indicates higher rhythmic complexity.
+    mean_ioi = np.mean(iois) if iois else 0
+    std_ioi = np.std(iois) if iois else 0
+    mean_duration = np.mean(durations) if durations else 0
+    std_duration = np.std(durations) if durations else 0
+
+    # Calculate entropy of IOIs and durations
+    # Use entropy to measure the unpredictability or randomness in the
+    # rhythmic patterns. Higher entropy values suggest higher complexity.
+    def calculate_entropy(data):
+        if not data:
+            return 0
+        try:
+            hist, _ = np.histogram(data, bins=bins, density=True)
+            hist = hist / np.sum(hist)
+            entropy = -np.sum(hist * np.log2(hist + 1e-10))
+        except Exception:
+            return 0
+        return entropy
+
+    # normalized_entropy_ioi = normalize(entropy_ioi, 0, max_entropy)
+    # normalized_entropy_duration = normalize(entropy_duration, 0, max_entropy)
+    entropy_ioi = calculate_entropy(iois)
+    entropy_duration = calculate_entropy(durations)
+
+    # Combine metrics to form a rhythmic complexity score
+    rhythmic_complexity = (std_ioi + std_duration + entropy_ioi + entropy_duration) / 4
+
+
+    # Set a threshold for filtering small IOIs
+    # really small events can make the BPM blow out
+    threshold = 0.25 # Threshold in seconds
+    filtered_iois = [ioi for ioi in iois if ioi > threshold]
+    # Calculate the average IOI in seconds
+    avg_ioi = sum(filtered_iois) / len(filtered_iois) if filtered_iois else 0
+    # Convert average IOI to BPM
+    if avg_ioi > 0:
+        bpm = round(60 / avg_ioi)
+
+    return {
+        "entropy_ioi": entropy_ioi,
+        "entropy_duration": entropy_duration,
+        "mean_ioi": mean_ioi,
+        "std_ioi": std_ioi,
+        "mean_duration": mean_duration,
+        "std_duration": std_duration,
+        "bpm": bpm,
+        "total": rhythmic_complexity, # non-normalized total
+    }
+
+
 def encode_midi(midi_file: str,
                 window_size=64,
                 instrument_name: str = "Standard Kit") -> np.array:
@@ -170,7 +261,7 @@ def decode_midi(
     numerator = data[2] if data[2] > 0 else 4
     denominator = data[3] if data[3] > 0 else 4
 
-    pm = pretty_midi.PrettyMIDI()
+    pm = pretty_midi.PrettyMIDI(resolution=COMMON_RESOLUTION)
     instrument = pretty_midi.Instrument(
         program=pretty_midi.instrument_name_to_program(instrument_name) if instrument_name != "Standard Kit" else 0,
         is_drum=True if instrument_name == "Standard Kit" else False,

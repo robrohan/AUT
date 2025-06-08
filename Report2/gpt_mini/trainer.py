@@ -5,6 +5,8 @@ specifically.
 """
 
 import time
+import math
+from typing import Tuple
 from collections import defaultdict
 
 import torch
@@ -30,11 +32,12 @@ class Trainer:
         C.grad_norm_clip = 1.0
         return C
 
-    def __init__(self, config, model, train_dataset):
+    def __init__(self, config, model, train_dataset, val_dataset):
         self.config = config
         self.model = model
         self.optimizer = None
         self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
         self.callbacks = defaultdict(list)
 
         # determine the device we'll train on
@@ -60,6 +63,29 @@ class Trainer:
         for callback in self.callbacks.get(onevent, []):
             callback(self)
 
+    def perplexity(self, avg_loss) -> float:
+        return math.exp(avg_loss)
+
+    def validate(self, val_loader) -> Tuple[float, float]:
+        model = self.model
+        model.eval()  # Set the model to evaluation mode
+
+        val_losses = []
+        num_tokens = 0
+        with torch.no_grad():
+            for batch in val_loader:
+                batch = [t.to(self.device) for t in batch]
+                x, y = batch
+                logits, loss = model(x, y)
+                val_losses.append(loss.item())
+                num_tokens += x.size(0)
+
+        # Calculate the average validation loss and perplexity
+        avg_val_loss = sum(val_losses) / num_tokens
+        val_pp = self.perplexity(avg_val_loss)
+        model.train()  # Set the model back to training mode
+        return float(avg_val_loss), float(val_pp)
+
     def run(self):
         model, config = self.model, self.config
 
@@ -70,8 +96,18 @@ class Trainer:
         train_loader = DataLoader(
             self.train_dataset,
             sampler=torch.utils.data.RandomSampler(
-                self.train_dataset, replacement=True, num_samples=int(1e10)
+                self.train_dataset,
+                replacement=True,
+                num_samples=self.config.max_sample_size
             ),
+            shuffle=False,
+            pin_memory=True,
+            batch_size=config.batch_size,
+            num_workers=config.num_workers,
+        )
+
+        val_loader = DataLoader(
+            self.val_dataset,
             shuffle=False,
             pin_memory=True,
             batch_size=config.batch_size,
@@ -82,6 +118,9 @@ class Trainer:
         self.iter_num = 0
         self.iter_time = time.time()
         data_iter = iter(train_loader)
+        # keep track of the number of iterations between validations
+        validation_interval = config.validation_interval
+
         while True:
             # fetch the next batch (x, y) and re-init iterator if needed
             try:
@@ -93,15 +132,24 @@ class Trainer:
             x, y = batch
 
             # forward the model
-            # print(x)
-            # print(y)
             logits, self.loss = model(x, y)
+
+            # Calculate perplexity for this batch
+            avg_loss = self.loss.item() / x.size(0)  # Average loss per token
+            batch_pp = self.perplexity(avg_loss)
+            self.batch_pp = batch_pp
 
             # backprop and update the parameters
             model.zero_grad(set_to_none=True)
             self.loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
             self.optimizer.step()
+
+            # Model validation
+            if self.iter_num % validation_interval == 0:
+                val_loss, val_pp = self.validate(val_loader)
+                self.val_loss = val_loss
+                self.val_pp = val_pp
 
             self.trigger_callbacks("on_batch_end")
             self.iter_num += 1
