@@ -66,12 +66,23 @@ class Trainer:
     def perplexity(self, avg_loss) -> float:
         return math.exp(avg_loss)
 
-    def validate(self, val_loader) -> Tuple[float, float]:
+    def calculate_accuracy(self, logits, y):
+        # Generate predictions by taking the argmax of the logits
+        predictions = torch.argmax(logits, dim=-1)
+        # Compare predictions to labels and calculate accuracy
+        correct_predictions = (predictions == y).sum().item()
+        total_predictions = y.size(0)
+        accuracy = correct_predictions / total_predictions
+        return accuracy
+
+    def validate(self, val_loader) -> Tuple[float, float, float]:
         model = self.model
         model.eval()  # Set the model to evaluation mode
 
         val_losses = []
+        val_accuracies = []
         num_tokens = 0
+
         with torch.no_grad():
             for batch in val_loader:
                 batch = [t.to(self.device) for t in batch]
@@ -80,11 +91,17 @@ class Trainer:
                 val_losses.append(loss.item())
                 num_tokens += x.size(0)
 
-        # Calculate the average validation loss and perplexity
+                # Calculate accuracy for the batch
+                batch_accuracy = self.calculate_accuracy(logits, y)
+                val_accuracies.append(batch_accuracy)
+
+        # Calculate the average validation loss, perplexity, and accuracy
         avg_val_loss = sum(val_losses) / num_tokens
         val_pp = self.perplexity(avg_val_loss)
+        avg_val_accuracy = sum(val_accuracies) / len(val_accuracies)
+
         model.train()  # Set the model back to training mode
-        return float(avg_val_loss), float(val_pp)
+        return avg_val_loss, val_pp, avg_val_accuracy
 
     def run(self):
         model, config = self.model, self.config
@@ -138,6 +155,9 @@ class Trainer:
             avg_loss = self.loss.item() / x.size(0)  # Average loss per token
             batch_pp = self.perplexity(avg_loss)
             self.batch_pp = batch_pp
+            # Calculate accuracy for the batch
+            batch_accuracy = self.calculate_accuracy(logits, y)
+            self.batch_accuracy = batch_accuracy
 
             # backprop and update the parameters
             model.zero_grad(set_to_none=True)
@@ -147,9 +167,10 @@ class Trainer:
 
             # Model validation
             if self.iter_num % validation_interval == 0:
-                val_loss, val_pp = self.validate(val_loader)
+                val_loss, val_pp, val_acc = self.validate(val_loader)
                 self.val_loss = val_loss
                 self.val_pp = val_pp
+                self.val_acc = val_acc
 
             self.trigger_callbacks("on_batch_end")
             self.iter_num += 1
