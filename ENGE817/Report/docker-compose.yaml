@@ -1,6 +1,4 @@
-version: '3.4'
 services:
-
   t2v-transformers:
     # image: semitechnologies/transformers-inference:sentence-transformers-multi-qa-MiniLM-L6-cos-v1
     image: semitechnologies/transformers-inference:distilbert-base-uncased
@@ -23,18 +21,8 @@ services:
       CLUSTER_HOSTNAME: "node1"
       # DEFAULT_VECTORIZER_MODULE: text2vec-hauggingface
       # ENABLE_MODULES: text2vec-huggingface
-
       ENABLE_MODULES: text2vec-transformers
       DEFAULT_VECTORIZER_MODULE: text2vec-transformers
-
       # ENABLE_MODULES: distilbert-base-uncased
       # DEFAULT_VECTORIZER_MODULE: distilbert-base-uncased
-
       TRANSFORMERS_INFERENCE_API: http://t2v-transformers:8080
-
-  # categorize:
-  #   image: adink/categorize:1958496
-  #   ports:
-  #   - "8081:8080"
-  #   environment:
-  #     DEBUG_LEVEL: 0
