@@ -6,3 +6,4 @@ ipywidgets
 pymupdf4llm
 markdown
 markdown-query
+bs4
