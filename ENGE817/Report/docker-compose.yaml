@@ -1,11 +1,11 @@
 services:
-  t2v-transformers:
-    image: semitechnologies/transformers-inference:distilbert-base-uncased
-    ports:
-    - "9090:8080"
-    environment:
-      # set to 1 to enable
-      ENABLE_CUDA: 0
+  # t2v-transformers:
+  #   image: semitechnologies/transformers-inference:distilbert-base-uncased
+  #   ports:
+  #   - "9090:8080"
+  #   environment:
+  #     # set to 1 to enable
+  #     ENABLE_CUDA: 0
 
   # t2v-transformers:
   #   image: robrohan/transformers-inference:distilroberta-inference
@@ -14,12 +14,12 @@ services:
   #   environment:
   #     ENABLE_CUDA: 0
 
-  # t2v-transformers:
-  #   image: robrohan/transformers-inference:clinicalbert-inference
-  #   ports:
-  #   - "9090:8080"
-  #   environment:
-  #     ENABLE_CUDA: 0
+  t2v-transformers:
+    image: robrohan/transformers-inference:clinicalbert-inference
+    ports:
+    - "9090:8080"
+    environment:
+      ENABLE_CUDA: 0
 
   # t2v-transformers:
   #   image: robrohan/transformers-inference:biobert-base-cased
