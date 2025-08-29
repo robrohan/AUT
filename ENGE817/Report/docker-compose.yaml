@@ -1,11 +1,32 @@
 services:
   t2v-transformers:
-    # image: semitechnologies/transformers-inference:sentence-transformers-multi-qa-MiniLM-L6-cos-v1
     image: semitechnologies/transformers-inference:distilbert-base-uncased
     ports:
     - "9090:8080"
     environment:
-      ENABLE_CUDA: 0 # set to 1 to enable
+      # set to 1 to enable
+      ENABLE_CUDA: 0
+
+  # t2v-transformers:
+  #   image: robrohan/transformers-inference:distilroberta-inference
+  #   ports:
+  #   - "9090:8080"
+  #   environment:
+  #     ENABLE_CUDA: 0
+
+  # t2v-transformers:
+  #   image: robrohan/transformers-inference:clinicalbert-inference
+  #   ports:
+  #   - "9090:8080"
+  #   environment:
+  #     ENABLE_CUDA: 0
+
+  # t2v-transformers:
+  #   image: robrohan/transformers-inference:biobert-base-cased
+  #   ports:
+  #   - "9090:8080"
+  #   environment:
+  #     ENABLE_CUDA: 0
 
   weaviate:
     image: semitechnologies/weaviate:stable-v1.31-13b6a17

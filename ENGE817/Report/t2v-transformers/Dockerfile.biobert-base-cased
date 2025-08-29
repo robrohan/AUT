@@ -1,0 +1,2 @@
+FROM semitechnologies/transformers-inference:custom
+RUN MODEL_NAME=dmis-lab/biobert-base-cased-v1.2 ./download.py

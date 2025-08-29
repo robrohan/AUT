@@ -1,0 +1,2 @@
+FROM semitechnologies/transformers-inference:custom
+RUN MODEL_NAME=distilroberta-base ./download.py
