@@ -1,49 +1,50 @@
 services:
-  # t2v-transformers:
-  #   image: semitechnologies/transformers-inference:distilbert-base-uncased
-  #   ports:
-  #   - "9090:8080"
-  #   environment:
-  #     # set to 1 to enable
-  #     ENABLE_CUDA: 0
-
-  # t2v-transformers:
-  #   image: robrohan/transformers-inference:distilroberta-inference
-  #   ports:
-  #   - "9090:8080"
-  #   environment:
-  #     ENABLE_CUDA: 0
-
-  # t2v-transformers:
-  #   image: robrohan/transformers-inference:clinicalbert-inference
-  #   ports:
-  #   - "9090:8080"
-  #   environment:
-  #     ENABLE_CUDA: 0
-
   t2v-transformers:
-    image: robrohan/transformers-inference:biobert-base-cased
+    image: semitechnologies/transformers-inference:distilbert-base-uncased
     ports:
     - "9090:8080"
     environment:
       ENABLE_CUDA: 0
 
+  t2v-transformers-drobert:
+    image: robrohan/transformers-inference:distilroberta-inference
+    ports:
+    - "9091:8080"
+    environment:
+      ENABLE_CUDA: 0
+
+  t2v-transformers-biobert:
+    image: robrohan/transformers-inference:biobert-base-cased
+    ports:
+    - "9092:8080"
+    environment:
+      ENABLE_CUDA: 0
+
+  t2v-transformers-clicbert:
+    image: robrohan/transformers-inference:clinicalbert-inference
+    ports:
+    - "9093:8080"
+    environment:
+      ENABLE_CUDA: 0
+  # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   weaviate:
     image: semitechnologies/weaviate:stable-v1.31-13b6a17
-    depends_on: [t2v-transformers]
+    depends_on: [t2v-transformers, t2v-transformers-drobert, t2v-transformers-biobert, t2v-transformers-clicbert]
     ports:
     - 8080:8080
     - 50051:50051
+    volumes:
+    - ./weaviate_data:/var/lib/weaviate/data
     # restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 20
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
-      PERSISTENCE_DATA_PATH: "./data"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate/data"
       CLUSTER_HOSTNAME: "node1"
-      # DEFAULT_VECTORIZER_MODULE: text2vec-hauggingface
-      # ENABLE_MODULES: text2vec-huggingface
       ENABLE_MODULES: text2vec-transformers
       DEFAULT_VECTORIZER_MODULE: text2vec-transformers
-      # ENABLE_MODULES: distilbert-base-uncased
-      # DEFAULT_VECTORIZER_MODULE: distilbert-base-uncased
+      # default embedding
       TRANSFORMERS_INFERENCE_API: http://t2v-transformers:8080
+
+volumes:
+  weaviate_data:

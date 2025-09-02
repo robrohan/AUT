@@ -1,4 +1,11 @@
+.DS_Store
 
-*.joblib
+# raw datasets
+datasets
+# temp processing sections
 sections
 chunks
+
+# "running" databases
+weaviate_data
+mimiciii.db

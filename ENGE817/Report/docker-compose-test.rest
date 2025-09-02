@@ -1,0 +1,53 @@
+@weave_server=http://127.0.0.1:8080
+@vec0_server=http://localhost:9090
+@vec1_server=http://localhost:9091
+@vec2_server=http://localhost:9092
+@vec3_server=http://localhost:9093
+
+#############################
+# Weaviate text2vec db
+# These quick tests make sure Weaviate is up and running
+###
+GET {{weave_server}}/v1/meta
+
+###
+GET {{weave_server}}/v1/schema
+
+###
+GET {{weave_server}}/v1/schema/Content
+
+###
+# View all object (add /id to limit)
+GET {{weave_server}}/v1/objects
+
+###
+# Same as above but include the vectors
+GET {{weave_server}}/v1/objects?include=vector
+
+#########################
+# Weaviate uses a different service to run the models
+# These tests make sure the vector embedding services
+# are all up and running
+###
+POST {{vec0_server}}/vectors
+Content-Type: application/json
+
+{"text": "Anxiety, keep on trying me"}
+
+###
+POST {{vec1_server}}/vectors
+Content-Type: application/json
+
+{"text": "Anxiety, keep on trying me"}
+
+###
+POST {{vec2_server}}/vectors
+Content-Type: application/json
+
+{"text": "Anxiety, keep on trying me"}
+
+###
+POST {{vec3_server}}/vectors
+Content-Type: application/json
+
+{"text": "Anxiety, keep on trying me"}

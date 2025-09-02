@@ -1,0 +1,10 @@
+numpy
+pandas
+seaborn
+matplotlib
+ipywidgets
+pymupdf4llm
+markdown
+markdown-query
+bs4
+markdownify
