@@ -2,3 +2,8 @@ cifar10-c-parquet
 cifar10craw
 data
 temp
+
+*_train_*.csv
+*_result_*.csv
+
+tinyvit.ipynb

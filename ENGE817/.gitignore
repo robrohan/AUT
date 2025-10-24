@@ -3,4 +3,4 @@
 *.lrc
 *.json
 spectrogram.png
-
+Report/results/*
